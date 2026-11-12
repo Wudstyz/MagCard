@@ -11,6 +11,8 @@
 
 <p align="center"><img src="docs/screenshots/01_accueil.png" width="800" alt="Capture d'écran de MagCard"></p>
 
+> **Usage prévu.** MagCard est un outil personnel de recherche et d'apprentissage pour lire/écrire **tes propres cartes** (badges, cartes de test, projets perso) dont tu as le droit de modifier le contenu. Il ne contourne aucune protection et ne fonctionne que sur des cartes à piste magnétique en clair, inscriptibles par n'importe quel lecteur MSR605X du commerce. Utilise-le uniquement sur du matériel qui t'appartient ou que tu es autorisé à manipuler.
+
 ## Ce que ça fait
 
 MagCard pilote un lecteur **MSR605X** (USB HID) depuis une vraie application macOS, avec une interface simple en français :

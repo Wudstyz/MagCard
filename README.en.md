@@ -11,6 +11,8 @@
 
 <p align="center"><img src="docs/screenshots/01_accueil.png" width="800" alt="MagCard screenshot"></p>
 
+> **Intended use.** MagCard is a personal research and learning tool for reading/writing **your own cards** (badges, test cards, hobby projects) whose content you have the right to change. It bypasses no protection and only works on plain magnetic-stripe cards, writable by any off-the-shelf MSR605X reader. Only use it on hardware you own or are authorized to handle.
+
 ## What it does
 
 MagCard drives an **MSR605X** (USB HID) reader from a real macOS application, with a simple interface:
