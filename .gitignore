@@ -7,3 +7,4 @@ __pycache__/
 *.app/
 *.dmg
 msr_debug.log
+*.dmg.sha256
