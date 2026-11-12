@@ -7,7 +7,11 @@ NAME="MagCard"
 
 STAGE="$(mktemp -d /tmp/${NAME}_dmg.XXXXXX)"
 trap 'rm -rf "$STAGE"' EXIT
-ditto "$NAME.app" "$STAGE/$NAME.app"
+# --noextattr : un dossier synchronisé (iCloud, etc.) peut avoir réappliqué des métadonnées
+# sur l'app depuis sa signature ; on ne les embarque surtout pas dans le .dmg distribué.
+ditto --noextattr --noqtn "$NAME.app" "$STAGE/$NAME.app"
+xattr -cr "$STAGE/$NAME.app"
+codesign --verify --deep --strict "$STAGE/$NAME.app"
 ln -s /Applications "$STAGE/Applications"
 rm -f "$NAME.dmg"
 hdiutil create -volname "$NAME" -srcfolder "$STAGE" -ov -format UDZO "$NAME.dmg"
