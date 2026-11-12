@@ -1,0 +1,1062 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__APP_NAME__</title>
+<style>
+  :root {
+    --bg0: #07080d; --bg1: #0d1020; --panel: rgba(255,255,255,.045); --panel2: rgba(255,255,255,.07);
+    --line: rgba(255,255,255,.10); --text: #eef0f8; --muted: #8b90a7;
+    --a1: #6c5ce7; --a2: #00cec9; --ok: #2ee59d; --warn: #ffb547; --bad: #ff5c7a;
+    --shadow: 0 20px 60px rgba(0,0,0,.45);
+  }
+  :root[data-theme="light"] {
+    --bg0: #eef0f7; --bg1: #f7f8fc; --panel: rgba(255,255,255,.85); --panel2: rgba(20,24,60,.06);
+    --line: rgba(20,24,60,.12); --text: #14172b; --muted: #61668a; --ok: #0ea36b; --warn: #c97a00; --bad: #d92d4b;
+    --shadow: 0 20px 50px rgba(40,50,110,.15);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    color: var(--text); font: 14px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
+    background:
+      radial-gradient(900px 500px at 12% -10%, color-mix(in srgb, var(--a1) 28%, transparent), transparent 60%),
+      radial-gradient(800px 500px at 100% 0%, color-mix(in srgb, var(--a2) 20%, transparent), transparent 55%),
+      linear-gradient(180deg, var(--bg1), var(--bg0));
+    background-attachment: fixed;
+  }
+  .mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+
+  /* barre du haut */
+  .top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 28px; }
+  .brand div { white-space: nowrap; }
+  .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 18px; letter-spacing: .2px; }
+  .logo { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+          background: linear-gradient(135deg, var(--a1), var(--a2)); box-shadow: 0 6px 20px color-mix(in srgb, var(--a1) 50%, transparent); }
+  .brand small { display: block; font-weight: 400; font-size: 12px; color: var(--muted); }
+  .top-right { display: flex; align-items: center; gap: 10px; }
+  .pill { display: flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 999px;
+          background: var(--panel); border: 1px solid var(--line); font-size: 13px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); }
+  .dot.on { background: var(--ok); box-shadow: 0 0 10px var(--ok); }
+  .dot.off { background: var(--bad); } .dot.busy { background: var(--warn); box-shadow: 0 0 10px var(--warn); animation: pulse 1s infinite; }
+  @keyframes pulse { 50% { opacity: .35; } }
+  .icon-btn { width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel);
+              cursor: pointer; display: grid; place-items: center; }
+  .icon-btn:hover { background: var(--panel2); }
+  .icon-btn.active { border-color: var(--a2); color: var(--a2); }
+  svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* mise en page */
+  .wrap { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(300px, .75fr); gap: 20px; padding: 0 28px 48px; max-width: 1280px; margin: 0 auto; }
+  @media (max-width: 960px) { .wrap { grid-template-columns: 1fr; padding: 0 16px 40px; } .top { padding: 14px 16px; } }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 22px; backdrop-filter: blur(14px); box-shadow: var(--shadow); }
+  .stack { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 1.4px; color: var(--muted); margin: 0 0 14px; font-weight: 600; }
+
+  /* carte + lecteur */
+  .stage { display: grid; place-items: center; padding: 8px 0 22px; min-height: 270px; position: relative; perspective: 1000px; }
+  .reader { position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); width: min(470px, 96%); height: 46px;
+            border-radius: 14px; background: linear-gradient(180deg, #2a2d42, #151726); border: 1px solid var(--line);
+            box-shadow: 0 -2px 0 rgba(0,0,0,.4) inset; display: flex; align-items: center; padding: 0 14px; gap: 10px; z-index: 2; }
+  .reader .slot { flex: 1; height: 8px; border-radius: 6px; background: #05060b; box-shadow: 0 1px 0 rgba(255,255,255,.07); }
+  .reader .led { width: 10px; height: 10px; border-radius: 50%; background: #3a3d55; }
+  .reader.waiting .led.y { background: var(--warn); box-shadow: 0 0 12px var(--warn); animation: pulse 1s infinite; }
+  .reader.ok .led.g { background: var(--ok); box-shadow: 0 0 12px var(--ok); }
+  .reader.err .led.r { background: var(--bad); box-shadow: 0 0 12px var(--bad); }
+  .card3d { width: min(360px, 88%); aspect-ratio: 1.586; border-radius: 18px; position: relative; overflow: hidden;
+            background: linear-gradient(135deg, #1e2140 0%, #2b2166 45%, #0b6f7a 100%); color: #fff;
+            box-shadow: 0 24px 50px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.12) inset;
+            transform: rotateX(8deg) translateY(-8px); transition: transform .5s cubic-bezier(.2,.8,.2,1); margin-bottom: 30px; container-type: inline-size; }
+  .card3d::after { content: ""; position: absolute; inset: 0; background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.14) 48%, transparent 62%);
+                   transform: translateX(-100%); animation: shine 5s infinite; }
+  @keyframes shine { 60%, 100% { transform: translateX(100%); } }
+  .card3d.swipe { animation: swipe 1.6s cubic-bezier(.5,0,.5,1) infinite; }
+  @keyframes swipe { 0% { transform: rotateX(8deg) translate(-70px, -8px); } 50% { transform: rotateX(8deg) translate(70px, 14px); }
+                     100% { transform: rotateX(8deg) translate(-70px, -8px); } }
+  .card3d.flash-ok { box-shadow: 0 24px 50px rgba(0,0,0,.5), 0 0 0 2px var(--ok), 0 0 40px color-mix(in srgb, var(--ok) 55%, transparent); }
+  .card3d.flash-err { box-shadow: 0 24px 50px rgba(0,0,0,.5), 0 0 0 2px var(--bad), 0 0 40px color-mix(in srgb, var(--bad) 55%, transparent); }
+  .chip { position: absolute; left: 5.5%; top: 9%; width: 11%; height: 13%; border-radius: 12%/16%; background: linear-gradient(135deg, #f1d58a, #b88a2c); }
+  .tag { position: absolute; right: 5%; top: 8%; font-size: 3cqw; letter-spacing: .5cqw; opacity: .8; text-transform: uppercase; }
+  .stripe { position: absolute; left: 0; right: 0; top: 30%; height: 38%; background: #0a0a0f; padding: 2.4cqw 4cqw;
+            display: flex; flex-direction: column; justify-content: space-between; }
+  .stripe div { font: 3.6cqw/1 ui-monospace, Menlo, monospace; color: #9fe7ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: .95; }
+  .stripe b { color: #6d7494; font-weight: 600; margin-right: 6px; }
+  .card-foot { position: absolute; left: 5.5%; bottom: 5%; font-size: 3.2cqw; opacity: .75; }
+
+  /* champs */
+  .fields { display: grid; gap: 14px; }
+  .field label { display: flex; justify-content: space-between; align-items: baseline; font-weight: 600; margin-bottom: 6px; }
+  .field label small { font-weight: 400; color: var(--muted); }
+  .inp { display: flex; gap: 8px; }
+  input[type=text], input[type=number], select, textarea {
+    width: 100%; padding: 11px 13px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel2); outline: none; }
+  input[type=text], textarea { font-family: ui-monospace, Menlo, monospace; }
+  input:focus, select:focus, textarea:focus { border-color: var(--a2); box-shadow: 0 0 0 3px color-mix(in srgb, var(--a2) 22%, transparent); }
+  .masked input[type=text] { -webkit-text-security: disc; }
+  select option { background: #1b1e33; color: #eef0f8; }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .bad { color: var(--bad) !important; }
+
+  /* boutons */
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+  .btn { border: 1px solid var(--line); background: var(--panel2); padding: 12px 20px; border-radius: 13px; font-weight: 600; cursor: pointer;
+         display: inline-flex; align-items: center; gap: 8px; transition: transform .12s, filter .12s, background .12s; }
+  .btn:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.12); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn.read { background: linear-gradient(135deg, var(--a1), #4a49d6); border-color: transparent; color: #fff; }
+  .btn.write { background: linear-gradient(135deg, #0aa7a1, var(--a2)); border-color: transparent; color: #04201f; }
+  .btn.erase { color: var(--bad); }
+  .btn.small { padding: 7px 12px; font-size: 13px; border-radius: 10px; font-weight: 500; }
+  .btn.ghost { background: transparent; }
+  .kbd { font: 11px ui-monospace, Menlo, monospace; opacity: .6; border: 1px solid currentColor; border-radius: 5px; padding: 0 5px; }
+
+  .opts { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .sw { display: inline-flex; align-items: center; gap: 9px; cursor: pointer; user-select: none; color: var(--muted); }
+  .sw input { appearance: none; width: 34px; height: 20px; border-radius: 20px; background: var(--panel2); border: 1px solid var(--line);
+              position: relative; cursor: pointer; transition: .2s; margin: 0; }
+  .sw input::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--muted); transition: .2s; }
+  .sw input:checked { background: color-mix(in srgb, var(--a2) 35%, transparent); border-color: var(--a2); }
+  .sw input:checked::after { left: 16px; background: var(--a2); }
+  .sw input:checked ~ span { color: var(--text); }
+
+  /* série */
+  .batch { display: none; margin-top: 16px; padding: 14px; border-radius: 14px; border: 1px dashed var(--line); }
+  .batch.show { display: block; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .grid3 label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; }
+  .bar { height: 6px; border-radius: 6px; background: var(--panel2); margin-top: 12px; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--a1), var(--a2)); transition: width .3s; }
+
+  /* statut */
+  .banner { display: none; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 14px; margin-bottom: 16px;
+            border: 1px solid var(--line); background: var(--panel2); }
+  .banner.show { display: flex; }
+  .banner.wait { border-color: var(--warn); } .banner.ok { border-color: var(--ok); } .banner.err { border-color: var(--bad); }
+  .banner .t { flex: 1; } .banner .t b { display: block; }
+  .banner .t span { color: var(--muted); font-size: 13px; }
+
+  /* onglets */
+  .tabs { display: flex; gap: 4px; background: var(--panel2); padding: 4px; border-radius: 12px; margin-bottom: 16px; }
+  .tabs button { flex: 1; border: 0; background: transparent; padding: 8px; border-radius: 9px; cursor: pointer; color: var(--muted); font-weight: 600; font-size: 13px; }
+  .tabs button.on { background: var(--panel); color: var(--text); box-shadow: 0 2px 8px rgba(0,0,0,.25); }
+  .tabpane { display: none; } .tabpane.on { display: block; }
+  .list { display: flex; flex-direction: column; gap: 8px; max-height: 360px; overflow: auto; }
+  .item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--panel2); border: 1px solid transparent; }
+  .item .g { flex: 1; min-width: 0; } .item .g b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .item small { color: var(--muted); }
+  .empty { color: var(--muted); text-align: center; padding: 22px 0; }
+  .tick { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--muted); }
+  .tick.ok { background: var(--ok); } .tick.err { background: var(--bad); } .tick.info { background: var(--a2); }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tool { margin-bottom: 18px; } .tool h3 { font-size: 13px; margin: 0 0 8px; }
+  pre.hex { margin: 0; padding: 12px; border-radius: 12px; background: var(--panel2); font: 12px/1.6 ui-monospace, Menlo, monospace; overflow: auto; max-height: 200px; white-space: pre-wrap; word-break: break-all; }
+  .toast { position: fixed; left: 50%; bottom: 26px; transform: translate(-50%, 30px); opacity: 0; background: var(--text); color: var(--bg0);
+           padding: 10px 18px; border-radius: 12px; font-weight: 600; transition: .25s; pointer-events: none; z-index: 10; }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  /* navigation Piste / Puce */
+  .seg { display: flex; gap: 4px; background: var(--panel); border: 1px solid var(--line); padding: 4px; border-radius: 14px; }
+  .seg button { border: 0; background: transparent; padding: 8px 18px; border-radius: 10px; cursor: pointer; font-weight: 600; color: var(--muted); }
+  .seg button.on { background: linear-gradient(135deg, var(--a1), #4a49d6); color: #fff; box-shadow: 0 4px 14px color-mix(in srgb, var(--a1) 45%, transparent); }
+  .view { display: none; } .view.on { display: grid; }
+
+  /* puce */
+  .cstage { display: grid; place-items: center; min-height: 260px; position: relative; padding: 56px 0 24px; }
+  .creader { width: min(380px, 92%); height: 150px; border-radius: 18px; position: relative; overflow: hidden;
+             background: linear-gradient(180deg, #2a2d42, #151726); border: 1px solid var(--line); box-shadow: var(--shadow); }
+  .creader .slot { position: absolute; left: 8%; right: 8%; top: 34%; height: 10px; border-radius: 6px; background: #05060b; }
+  .creader .lbl { position: absolute; left: 0; right: 0; bottom: 12px; text-align: center; font-size: 12px; color: #9aa0bd; letter-spacing: .5px; }
+  .creader .pl { position: absolute; right: 14px; top: 12px; width: 10px; height: 10px; border-radius: 50%; background: #3a3d55; }
+  .creader.present .pl { background: var(--ok); box-shadow: 0 0 12px var(--ok); }
+  .ccard { position: absolute; left: 50%; top: 40px; width: min(230px, 60%); aspect-ratio: 1.586; border-radius: 14px; transform: translate(-50%, -60%); opacity: 0;
+           background: linear-gradient(135deg, #2b2166, #0b6f7a); box-shadow: 0 14px 30px rgba(0,0,0,.45); transition: transform .8s cubic-bezier(.2,.8,.2,1), opacity .5s; z-index: 1; }
+  .ccard::before { content: ""; position: absolute; left: 14%; top: 26%; width: 22%; height: 26%; border-radius: 12%/16%;
+                   background: linear-gradient(135deg, #f1d58a, #b88a2c); box-shadow: inset 0 0 0 1px rgba(0,0,0,.25); }
+  .ccard.in { transform: translate(-50%, 6%); opacity: 1; }
+  .kv { display: grid; grid-template-columns: 150px 1fr; gap: 6px 14px; font-size: 13px; }
+  .kv dt { color: var(--muted); } .kv dd { margin: 0; font-family: ui-monospace, Menlo, monospace; word-break: break-all; }
+  .atr { font: 14px/1.6 ui-monospace, Menlo, monospace; padding: 12px 14px; border-radius: 12px; background: var(--panel2); word-break: break-all; margin-bottom: 14px; min-height: 48px; }
+  .con { max-height: 340px; overflow: auto; display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+  .ex { border-radius: 12px; background: var(--panel2); padding: 10px 12px; font: 12.5px/1.55 ui-monospace, Menlo, monospace; word-break: break-all; }
+  .ex .tx { color: var(--a2); } .ex .rx { color: var(--text); } .ex .sw.ok { color: var(--ok); } .ex .sw.err { color: var(--bad); } .ex .tt { color: var(--muted); font-family: -apple-system, system-ui, sans-serif; font-size: 12px; }
+  .twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .appb { border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin-top: 14px; background: var(--panel2); }
+  .appb h3 { margin: 0 0 2px; font-size: 15px; } .appb .aid { font: 12px ui-monospace, Menlo, monospace; color: var(--muted); word-break: break-all; margin-bottom: 8px; }
+  .fileb { border-top: 1px solid var(--line); padding: 8px 0; }
+  .fileb summary { cursor: pointer; font-weight: 600; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+  .fileb summary small { font-weight: 400; color: var(--muted); }
+  .badge { font-size: 11px; padding: 1px 8px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); font-weight: 500; }
+  .badge.blank { color: var(--ok); border-color: var(--ok); } .badge.used { color: var(--warn); border-color: var(--warn); }
+  .badge.lock { color: var(--warn); border-color: var(--warn); }
+  .tl { font: 13px/1.7 ui-monospace, Menlo, monospace; padding: 6px 0 2px; }
+  .tl .tg { display: inline-block; min-width: 38px; color: var(--a2); }
+  .tl .lbl { color: var(--muted); }
+  #content.blur .val { filter: blur(7px); transition: filter .2s; } #content.blur .val:hover { filter: none; }
+  .raw { margin-top: 6px; }
+  .raw summary { font-weight: 400; color: var(--muted); font-size: 12px; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <div class="logo" id="logo"></div>
+    <div>__APP_NAME__<small id="fw">__APP_SUBTITLE__</small></div>
+  </div>
+  <div class="seg" id="modeSeg"><button class="on" data-mode="mag">Piste magnétique</button><button data-mode="chip">Puce</button></div>
+  <div class="top-right">
+    <div class="pill"><span class="dot" id="dot"></span><span id="statusText">Vérification…</span></div>
+    <button class="icon-btn" id="bMask" title="Masquer les données (m)"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+    <button class="icon-btn" id="bSound" title="Sons"><svg viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg></button>
+    <button class="icon-btn" id="bTheme" title="Thème clair / sombre"><svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+  </div>
+</header>
+
+<div class="wrap view on" id="app">
+  <div class="stack">
+    <section class="panel">
+      <div class="banner" id="banner"><div class="t"><b id="bTitle"></b><span id="bSub"></span></div>
+        <button class="btn small" id="bCancel" style="display:none">Annuler <span class="kbd">Esc</span></button></div>
+
+      <div class="stage">
+        <div class="card3d" id="card">
+          <div class="chip"></div><div class="tag">Piste magnétique</div>
+          <div class="stripe mono">
+            <div><b>T1</b><span id="v1"></span></div><div><b>T2</b><span id="v2"></span></div><div><b>T3</b><span id="v3"></span></div>
+          </div>
+          <div class="card-foot" id="cardFoot">Aperçu en direct</div>
+        </div>
+        <div class="reader" id="reader"><span class="led g"></span><span class="led y"></span><span class="led r"></span><div class="slot"></div></div>
+      </div>
+
+      <div class="fields" id="fields">
+        <div class="field"><label for="t1">Piste 1 <small id="c1"></small></label>
+          <div class="inp"><input type="text" id="t1" maxlength="79" autocomplete="off" spellcheck="false" placeholder="TEXTE EN MAJUSCULES">
+          <button class="btn small ghost" type="button" data-copy-src="t1" title="Copier cette valeur (puis colle-la avec Cmd+V où tu veux)">Copier</button></div>
+          <div class="hint" id="h1">Majuscules, chiffres et ponctuation (les minuscules sont converties).</div></div>
+        <div class="field"><label for="t2">Piste 2 <small id="c2"></small></label>
+          <div class="inp"><input type="text" id="t2" maxlength="40" autocomplete="off" spellcheck="false" inputmode="numeric" placeholder="chiffres uniquement">
+          <button class="btn small ghost" type="button" data-copy-src="t2" title="Copier cette valeur (puis colle-la avec Cmd+V où tu veux)">Copier</button></div></div>
+        <div class="field"><label for="t3">Piste 3 <small id="c3"></small></label>
+          <div class="inp"><input type="text" id="t3" maxlength="107" autocomplete="off" spellcheck="false" inputmode="numeric" placeholder="chiffres uniquement">
+          <button class="btn small ghost" type="button" data-copy-src="t3" title="Copier cette valeur (puis colle-la avec Cmd+V où tu veux)">Copier</button></div></div>
+      </div>
+
+      <div class="actions">
+        <button class="btn read" data-act="read">Lire <span class="kbd">R</span></button>
+        <button class="btn write" data-act="write" id="bWrite">Écrire <span class="kbd">W</span></button>
+        <button class="btn erase" data-act="erase">Effacer <span class="kbd">E</span></button>
+        <button class="btn ghost" id="bClear">Vider les champs</button>
+      </div>
+
+      <div class="opts">
+        <label class="sw"><input type="checkbox" id="oVerify" checked><span>Vérifier après écriture</span></label>
+        <label class="sw"><input type="checkbox" id="oBatch"><span>Écriture en série</span></label>
+        <label class="sw"><input type="checkbox" id="oConfirm" checked><span>Demander confirmation</span></label>
+      </div>
+
+      <div class="batch" id="batch">
+        <div class="hint" style="margin:0 0 10px">Utilise <span class="mono">{n}</span> dans une piste : il sera remplacé par un compteur à chaque carte.
+          Exemple : <span class="mono">BADGE {n}</span> en piste 1, <span class="mono">{n}</span> en piste 2.</div>
+        <div class="grid3">
+          <div><label>Début</label><input type="number" id="bStart" value="1" min="0"></div>
+          <div><label>Nombre de cartes</label><input type="number" id="bCount" value="5" min="1" max="500"></div>
+          <div><label>Chiffres (zéros devant)</label><input type="number" id="bPad" value="4" min="1" max="12"></div>
+        </div>
+        <div class="bar"><i id="bBar"></i></div>
+        <div class="hint" id="bInfo"></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="stack">
+    <section class="panel">
+      <div class="tabs" id="tabs">
+        <button class="on" data-tab="journal">Journal</button><button data-tab="models">Modèles</button><button data-tab="tools">Outils</button>
+      </div>
+
+      <div class="tabpane on" id="tab-journal">
+        <div class="list" id="journal"><div class="empty">Aucune opération pour l'instant.</div></div>
+        <div class="row" style="margin-top:12px">
+          <button class="btn small ghost" id="jClear">Effacer le journal</button>
+          <button class="btn small" id="jExport">Exporter en CSV</button>
+        </div>
+        <div class="hint">Le journal ne garde jamais le contenu des cartes.</div>
+      </div>
+
+      <div class="tabpane" id="tab-models">
+        <div class="row" style="margin-bottom:12px">
+          <input type="text" id="mName" placeholder="Nom du modèle" style="flex:1;min-width:140px">
+          <button class="btn small" id="mSave">Enregistrer</button>
+        </div>
+        <div class="list" id="models"></div>
+        <div class="row" style="margin-top:12px">
+          <button class="btn small ghost" id="mExport">Exporter</button>
+          <button class="btn small ghost" id="mImport">Importer</button>
+          <input type="file" id="mFile" accept="application/json" hidden>
+        </div>
+        <div class="hint">Enregistrés uniquement dans ce navigateur. Ne sauvegarde pas de données sensibles.</div>
+      </div>
+
+      <div class="tabpane" id="tab-tools">
+        <div class="tool"><h3>Type de carte (écriture / effacement)</h3>
+          <select id="coer"><option value="hico">Bande noire (Hi-Co)</option><option value="loco">Bande marron (Lo-Co)</option></select></div>
+        <div class="tool"><h3>Données actuelles</h3>
+          <pre class="hex" id="hex"></pre>
+          <div class="row" style="margin-top:8px">
+            <button class="btn small" id="tCopy">Copier</button>
+            <button class="btn small" id="tJson">Télécharger JSON</button>
+            <button class="btn small" id="tCsv">Télécharger CSV</button>
+          </div></div>
+        <div class="tool"><h3>Lecteur</h3>
+          <div class="row">
+            <button class="btn small" id="tInfo">Infos</button>
+            <button class="btn small" data-led="green">Vert</button>
+            <button class="btn small" data-led="yellow">Orange</button>
+            <button class="btn small" data-led="red">Rouge</button>
+          </div>
+          <div class="hint" id="tInfoOut"></div></div>
+        <div class="tool"><h3>Raccourcis</h3>
+          <div class="hint"><span class="kbd">R</span> lire · <span class="kbd">W</span> écrire · <span class="kbd">E</span> effacer · <span class="kbd">Esc</span> annuler · <span class="kbd">M</span> masquer</div></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="wrap view" id="chipApp">
+  <div class="stack">
+    <section class="panel">
+      <div class="cstage">
+        <div class="creader" id="creader"><span class="pl"></span><div class="slot"></div><div class="lbl" id="cLabel">Lecteur de puce</div></div>
+        <div class="ccard" id="ccard"></div>
+      </div>
+      <h2>ATR (identité de la puce) <span class="badge" id="cBlankBadge" style="display:none"></span></h2>
+      <div class="atr" id="atr">—</div>
+      <dl class="kv" id="atrInfo"></dl>
+      <div class="actions">
+        <button class="btn" id="cCopyAtr">Copier l'ATR</button>
+        <button class="btn" id="cReset">Réinitialiser la carte</button>
+        <button class="btn write" id="cExplore">Lire tout le contenu</button>
+      </div>
+      <div class="hint" id="cMsg" style="margin-top:12px"></div>
+    </section>
+
+    <section class="panel" id="content" style="display:none">
+      <h2>Contenu de la carte</h2>
+      <div class="hint" id="cSummary" style="margin:0 0 4px"></div>
+      <div id="apps"></div>
+      <div class="actions"><button class="btn small" id="cExport">Exporter en JSON</button></div>
+      <div class="hint">Données de ta carte, affichées localement et jamais envoyées ailleurs. Passe la souris sur une valeur floutée (œil en haut) pour la voir.</div>
+    </section>
+
+    <section class="panel">
+      <h2>Mémoire (cartes à mémoire)</h2>
+      <div class="twocol">
+        <div><label class="hint" for="mStart">Adresse de départ (hex)</label><input type="text" id="mStart" value="0000" maxlength="4"></div>
+        <div><label class="hint" for="mLen">Octets à lire</label><input type="number" id="mLen" value="256" min="1" max="1024"></div>
+      </div>
+      <div class="actions">
+        <button class="btn read" id="mRead">Lire la mémoire</button>
+        <button class="btn small ghost" id="mCopyText" style="display:none">Copier en texte clair</button>
+      </div>
+      <pre class="hex" id="mOut" style="margin-top:14px;display:none"></pre>
+
+      <div style="margin-top:16px;padding-top:14px;border-top:1px dashed var(--line)">
+        <button class="btn small" id="mDupStart">Dupliquer vers une autre carte</button>
+        <div class="hint" style="margin-top:6px">Lit la zone ci-dessus (adresse + nombre d'octets) et te guide pour la recopier à l'identique sur une seconde carte. La zone protégée 0000-001F n'est jamais copiée.</div>
+        <div id="mDupFlow" style="display:none;margin-top:10px">
+          <div class="hint" id="mDupMsg"></div>
+          <div class="actions" style="margin-top:8px">
+            <button class="btn write" id="mDupWrite">Écrire sur la carte cible</button>
+            <button class="btn small ghost" id="mDupCancel">Annuler</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--line)">
+        <div class="field"><label for="mWText">Texte en clair</label>
+          <input type="text" id="mWText" placeholder="TEST OMNIKEY 3121" spellcheck="false" autocomplete="off"></div>
+        <div class="field"><label for="mWData">Octets à écrire (hex) <small id="mWTextLen"></small></label>
+          <input type="text" id="mWData" placeholder="DE AD BE EF ..." spellcheck="false" autocomplete="off"></div>
+        <div class="twocol">
+          <div><label class="hint" for="mWStart">Adresse de départ (hex)</label><input type="text" id="mWStart" value="0020" maxlength="4"></div>
+          <div><label class="hint" for="mWPsc">Code d'accès / PSC (hex)</label><input type="text" id="mWPsc" value="FF FF" placeholder="FF FF (2 oct. SLE4428) ou FF FF FF (3 oct. SLE4442)" spellcheck="false" autocomplete="off"></div>
+        </div>
+        <label class="sw" style="margin-top:4px"><input type="checkbox" id="mWVerify" checked><span>Vérifier après écriture (relit et compare)</span></label>
+        <div class="actions" style="margin-top:10px">
+          <button class="btn write" id="mWrite">Écrire en mémoire</button>
+        </div>
+        <div class="hint bad">⚠ Ne touche pas aux adresses 0000-001F (marge de sécurité) : les tout premiers octets servent d'identification lue par le lecteur. Les effacer peut rendre la carte invisible, même après redémarrage du Mac (vécu ce soir). Commence à 0020 ou plus.</div>
+        <div class="hint">La plupart des cartes à mémoire refusent d'écrire tant qu'on n'a pas présenté leur code d'accès — remplis ce champ à chaque fois, sinon l'écriture échoue dès que la carte vient d'être insérée (« conditions non satisfaites »). Code d'usine le plus courant : FF FF (SLE4428) ou FF FF FF (SLE4442). Laisse vide uniquement si tu sais que ta carte n'en demande pas.</div>
+
+        <div style="margin-top:16px;padding-top:14px;border-top:1px dashed var(--line)">
+          <div class="row">
+            <input type="text" id="mModelName" placeholder="Nom du modèle" style="flex:1;min-width:140px">
+            <button class="btn small" id="mModelSave">Enregistrer</button>
+          </div>
+          <div class="list" id="mModelList" style="margin-top:10px;max-height:160px"></div>
+        </div>
+
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--line)">
+          <div class="twocol">
+            <div><label class="hint" for="mEraseLen">Octets à effacer</label><input type="number" id="mEraseLen" value="128" min="1" max="1024"></div>
+            <div style="align-self:end"><button class="btn erase" id="mErase" style="width:100%">Effacer la carte (remettre à vierge)</button></div>
+          </div>
+          <div class="hint">Réécrit des FF (l'état d'une carte vierge) à partir de l'adresse ci-dessus, sur le nombre d'octets indiqué. 128 octets couvre toute la mémoire utile d'une SLE4428.</div>
+        </div>
+        <div class="hint">Remplace les octets à partir de cette adresse. Vérifie la lecture juste avant : une écriture mal placée peut rendre la carte inutilisable.</div>
+      </div>
+      <div class="hint" style="margin-top:10px">Pour les cartes type SLE4442 / SLE4428.</div>
+    </section>
+  </div>
+
+  <div class="stack">
+    <section class="panel">
+      <h2>Console APDU</h2>
+      <div class="row">
+        <input type="text" id="apdu" placeholder="00 A4 00 00 02 3F 00" spellcheck="false" autocomplete="off" style="flex:1;min-width:160px">
+        <button class="btn read" id="apduSend">Envoyer</button>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <select id="apduPre" style="flex:1">
+          <option value="">Commandes types…</option>
+          <option value="00 A4 00 00 02 3F 00">SELECT : fichier maître (3F00)</option>
+          <option value="00 84 00 00 08">GET CHALLENGE (8 octets)</option>
+          <option value="00 B0 00 00 00">READ BINARY (fichier sélectionné)</option>
+          <option value="00 CA 9F 7F 00">GET DATA (9F7F)</option>
+          <option value="00 C0 00 00 00">GET RESPONSE</option>
+        </select>
+        <button class="btn small ghost" id="apduClear">Vider</button>
+      </div>
+      <div class="hint">Octets en hexadécimal. Les statuts 61xx (suite) et 6Cxx (mauvaise longueur) sont gérés automatiquement.</div>
+      <div class="con" id="con"><div class="empty">Aucune commande envoyée.</div></div>
+    </section>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const APP_MODE = "__APP_MODE__"; // "mag" | "chip" | "both" (both = dev, deux onglets)
+const $ = id => document.getElementById(id);
+$('logo').innerHTML = APP_MODE === 'chip'
+  ? '<svg viewBox="0 0 24 24" style="stroke:#fff;fill:none"><rect x="2.5" y="5" width="19" height="14" rx="3"/><rect x="8.5" y="9" width="7" height="6" rx="1.2" fill="#fff" stroke="none"/><path d="M8.5 11h7M8.5 13h7M5.5 10.2h3M5.5 13.8h3M15.5 10.2h3M15.5 13.8h3" stroke="#fff"/></svg>'
+  : '<svg viewBox="0 0 24 24" style="stroke:#fff"><rect x="2.5" y="5" width="19" height="14" rx="3"/><path d="M2.5 10h19"/></svg>';
+const F = ['t1', 't2', 't3'], MAX = { t1: 79, t2: 40, t3: 107 };
+const ls = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+let running = false, cancelled = false;
+
+/* ---------- préférences ---------- */
+document.documentElement.dataset.theme = ls.get('theme', matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+$('bTheme').onclick = () => { const t = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'; document.documentElement.dataset.theme = t; ls.set('theme', t); };
+let sound = ls.get('sound', true), masked = ls.get('masked', false);
+function syncPrefs() {
+  $('bSound').classList.toggle('active', sound); $('bMask').classList.toggle('active', masked);
+  $('fields').classList.toggle('masked', masked); $('content').classList.toggle('blur', masked); refreshCard();
+}
+$('bSound').onclick = () => { sound = !sound; ls.set('sound', sound); syncPrefs(); };
+$('bMask').onclick = () => { masked = !masked; ls.set('masked', masked); syncPrefs(); };
+$('coer').value = ls.get('coer', 'hico'); $('coer').onchange = () => ls.set('coer', $('coer').value);
+for (const k of ['oVerify', 'oConfirm']) { $(k).checked = ls.get(k, true); $(k).onchange = () => ls.set(k, $(k).checked); }
+
+/* ---------- sons & toasts ---------- */
+let actx;
+function beep(ok) {
+  if (!sound) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const seq = ok ? [[660, 0], [990, .11]] : [[220, 0], [160, .14]];
+    for (const [f, t] of seq) {
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.frequency.value = f; o.type = 'sine'; o.connect(g); g.connect(actx.destination);
+      const s = actx.currentTime + t; g.gain.setValueAtTime(.0001, s); g.gain.exponentialRampToValueAtTime(.18, s + .02);
+      g.gain.exponentialRampToValueAtTime(.0001, s + .14); o.start(s); o.stop(s + .16);
+    }
+  } catch (e) {}
+}
+let toastT;
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2200); }
+
+/* ---------- champs & carte ---------- */
+const val = f => $(f).value;
+function clean() {
+  for (const f of F) {
+    const el = $(f), p = el.selectionStart;
+    const rx = f === 't1' ? /[^\x20-\x5f]/g : /[^0-9:;<=>?]/g;
+    // le jeton {n} (compteur de la série) est conservé tel quel
+    el.value = el.value.split(/(\{n\})/i).map((part, i) => i % 2 ? '{n}' : (f === 't1' ? part.toUpperCase() : part).replace(rx, '')).join('');
+    try { el.setSelectionRange(p, p); } catch (e) {}
+  }
+}
+function refreshCard() {
+  F.forEach((f, i) => {
+    const v = val(f); $('c' + (i + 1)).textContent = v.length + ' / ' + MAX[f];
+    $('v' + (i + 1)).textContent = v ? (masked ? '•'.repeat(v.length) : v) : '—';
+  });
+  const rows = F.map((f, i) => {
+    const v = val(f); const codes = [...v].map(c => c.charCodeAt(0).toString(16).padStart(2, '0')).join(' ');
+    return `Piste ${i + 1} (${v.length})\n  ${masked ? '•'.repeat(v.length) : v || '(vide)'}\n  ${masked ? '' : codes}`;
+  });
+  $('hex').textContent = rows.join('\n');
+}
+F.forEach(f => $(f).addEventListener('input', () => { clean(); refreshCard(); }));
+function setTracks(t) { F.forEach((f, i) => $(f).value = t[i] || ''); refreshCard(); }
+$('bClear').onclick = () => { setTracks(['', '', '']); };
+
+/* ---------- API ---------- */
+async function api(name, body) {
+  const r = await fetch('/api/' + name, { method: 'POST', body: JSON.stringify(body || {}) });
+  return r.json();
+}
+function setBusy(on, label) {
+  running = on;
+  document.querySelectorAll('[data-act], [data-led], #tInfo, #bClear').forEach(b => b.disabled = on);
+  $('card').classList.toggle('swipe', on); $('reader').classList.toggle('waiting', on);
+  $('bCancel').style.display = on ? '' : 'none';
+}
+function banner(kind, title, sub) {
+  const b = $('banner'); b.className = 'banner show ' + kind; $('bTitle').textContent = title; $('bSub').textContent = sub || '';
+}
+function hideBanner() { $('banner').className = 'banner'; }
+function flash(ok) {
+  const c = $('card'), r = $('reader'); c.classList.add(ok ? 'flash-ok' : 'flash-err'); r.classList.add(ok ? 'ok' : 'err');
+  setTimeout(() => { c.classList.remove('flash-ok', 'flash-err'); r.classList.remove('ok', 'err'); }, 1800); beep(ok);
+}
+
+/* ---------- journal ---------- */
+const journal = [];
+function log(kind, text) {
+  const now = new Date();
+  journal.unshift({ kind, text, time: now.toLocaleTimeString('fr-FR'), iso: now.toISOString() });
+  const box = $('journal'); box.replaceChildren();
+  for (const e of journal.slice(0, 60)) {
+    const d = document.createElement('div'); d.className = 'item';
+    const t = document.createElement('span'); t.className = 'tick ' + e.kind;
+    const g = document.createElement('div'); g.className = 'g';
+    const b = document.createElement('b'); b.textContent = e.text;
+    const s = document.createElement('small'); s.textContent = e.time;
+    g.append(b, s); d.append(t, g); box.append(d);
+  }
+}
+$('jClear').onclick = () => { journal.length = 0; $('journal').innerHTML = '<div class="empty">Aucune opération pour l\'instant.</div>'; };
+$('jExport').onclick = () => {
+  if (!journal.length) return toast('Journal vide, rien à exporter.');
+  const esc = s => '"' + String(s).replaceAll('"', '""') + '"';
+  const rows = ['Date et heure,Résultat,Détail'];
+  for (const e of [...journal].reverse()) {
+    const resultat = e.kind === 'ok' ? 'Réussi' : e.kind === 'err' ? 'Échec' : 'Info';
+    rows.push([esc(e.iso), esc(resultat), esc(e.text)].join(','));
+  }
+  download('journal-cardpro-' + new Date().toISOString().slice(0, 10) + '.csv', rows.join('\n'), 'text/csv');
+  toast('Journal exporté');
+};
+
+/* ---------- opérations ---------- */
+const ASK = { write: 'Remplacer le contenu de la carte par ces 3 pistes ?', erase: 'Effacer toutes les pistes de la carte ?' };
+
+async function opRead(titleSub) {
+  banner('wait', 'Passe la carte dans le lecteur', titleSub || 'Bande vers le bas, geste régulier à vitesse moyenne.');
+  const j = await api('read');
+  if (j.error) throw new Error(j.error);
+  return j;
+}
+
+async function doRead() {
+  const j = await opRead();
+  setTracks([j.tracks[1], j.tracks[2], j.tracks[3]]);
+  const empty = !Object.values(j.tracks).some(v => v.trim());
+  banner(empty ? 'err' : 'ok', empty ? 'Carte vide' : 'Carte lue', j.msg);
+  log(empty ? 'info' : 'ok', empty ? 'Lecture : carte vide' : 'Lecture réussie');
+  flash(!empty);
+}
+
+async function writeOne(t, verify) {
+  const j = await api('write', { t1: t[0], t2: t[1], t3: t[2], coercivity: $('coer').value });
+  if (j.error) throw new Error(j.error);
+  if (!verify) return j.msg;
+  banner('wait', 'Écrit. Repasse la carte pour vérifier', 'Même geste, même sens.');
+  const r = await api('read');
+  if (r.error) throw new Error('Écriture envoyée mais vérification impossible : ' + r.error);
+  const got = [r.tracks[1], r.tracks[2], r.tracks[3]], want = [t[0].toUpperCase(), t[1], t[2]];
+  const diff = got.findIndex((g, i) => g !== want[i]);
+  if (diff >= 0) throw new Error(`Vérification échouée sur la piste ${diff + 1}. Réécris la carte plus lentement.`);
+  return 'Écriture vérifiée.';
+}
+
+function fill(s, n, pad) { return s.replaceAll('{n}', String(n).padStart(pad, '0')); }
+
+async function doWrite() {
+  const verify = $('oVerify').checked;
+  if ($('oBatch').checked) {
+    const start = +$('bStart').value, count = +$('bCount').value, pad = +$('bPad').value;
+    const tpl = F.map(val);
+    if (!tpl.join('').includes('{n}')) throw new Error('Mets {n} dans au moins une piste pour numéroter les cartes.');
+    cancelled = false;
+    for (let i = 0; i < count && !cancelled; i++) {
+      const n = start + i, t = tpl.map(s => fill(s, n, pad));
+      $('bBar').style.width = (i / count * 100) + '%'; $('bInfo').textContent = `Carte ${i + 1} / ${count} — numéro ${n}`;
+      setTracks(t);
+      banner('wait', `Série : carte ${i + 1} sur ${count}`, 'Passe une carte vierge dans le lecteur.');
+      try { await writeOne(t, verify); } catch (e) { setTracks(tpl); throw new Error(`Carte ${i + 1} : ${e.message}`); }
+      log('ok', `Série : carte ${i + 1}/${count} écrite`); beep(true);
+    }
+    $('bBar').style.width = '100%'; setTracks(tpl);
+    if (cancelled) throw new Error('Série interrompue.');
+    banner('ok', 'Série terminée', `${count} cartes écrites.`); flash(true); return;
+  }
+  const t = F.map(val);
+  const msg = await writeOne(t, verify);
+  banner('ok', 'Terminé', msg); log('ok', 'Écriture réussie' + (verify ? ' (vérifiée)' : '')); flash(true);
+}
+
+async function doErase() {
+  banner('wait', 'Passe la carte à effacer', 'Toutes les pistes seront vidées.');
+  const j = await api('erase', { coercivity: $('coer').value });
+  if (j.error) throw new Error(j.error);
+  banner('ok', 'Carte effacée', j.msg); log('ok', 'Effacement réussi'); flash(true);
+}
+
+async function act(name) {
+  if (running) return;
+  if (name !== 'read' && $('oConfirm').checked && !($('oBatch').checked && name === 'write') && !confirm(ASK[name])) return;
+  if (name === 'write' && $('oBatch').checked && $('oConfirm').checked && !confirm(`Écrire ${$('bCount').value} cartes à la suite ?`)) return;
+  setBusy(true);
+  try { await ({ read: doRead, write: doWrite, erase: doErase })[name](); }
+  catch (e) {
+    const m = e.message === 'Failed to fetch' ? 'Le programme ne répond plus. Est-il toujours lancé ?' : e.message;
+    banner('err', 'Échec', m); log('err', `${{ read: 'Lecture', write: 'Écriture', erase: 'Effacement' }[name]} : ${m}`); flash(false);
+  } finally { setBusy(false); poll(); }
+}
+document.querySelectorAll('[data-act]').forEach(b => b.onclick = () => act(b.dataset.act));
+$('bCancel').onclick = () => { cancelled = true; api('cancel'); };
+
+$('oBatch').onchange = () => {
+  $('batch').classList.toggle('show', $('oBatch').checked);
+  $('bWrite').firstChild.textContent = $('oBatch').checked ? 'Écrire la série ' : 'Écrire ';
+};
+
+/* ---------- onglets ---------- */
+document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('.tabpane').forEach(p => p.classList.toggle('on', p.id === 'tab-' + b.dataset.tab));
+});
+
+/* ---------- modèles ---------- */
+function renderModels() {
+  const list = ls.get('models', []), box = $('models'); box.replaceChildren();
+  if (!list.length) { box.innerHTML = '<div class="empty">Aucun modèle enregistré.</div>'; return; }
+  list.forEach((m, i) => {
+    const d = document.createElement('div'); d.className = 'item';
+    const g = document.createElement('div'); g.className = 'g';
+    const b = document.createElement('b'); b.textContent = m.name;
+    const s = document.createElement('small'); s.textContent = (m.coer === 'loco' ? 'Lo-Co' : 'Hi-Co') + ' · ' + m.t.filter(Boolean).length + ' piste(s)';
+    g.append(b, s);
+    const load = document.createElement('button'); load.className = 'btn small'; load.textContent = 'Charger';
+    load.onclick = () => { setTracks(m.t); $('coer').value = m.coer || 'hico'; ls.set('coer', $('coer').value); toast('Modèle chargé'); };
+    const del = document.createElement('button'); del.className = 'btn small ghost'; del.textContent = '✕'; del.title = 'Supprimer';
+    del.onclick = () => { list.splice(i, 1); ls.set('models', list); renderModels(); };
+    d.append(g, load, del); box.append(d);
+  });
+}
+$('mSave').onclick = () => {
+  const name = $('mName').value.trim(); if (!name) { toast('Donne un nom au modèle'); return; }
+  const list = ls.get('models', []).filter(m => m.name !== name);
+  list.unshift({ name, t: F.map(val), coer: $('coer').value }); ls.set('models', list); $('mName').value = ''; renderModels(); toast('Modèle enregistré');
+};
+function download(name, text, type) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+$('mExport').onclick = () => download('modeles-msr.json', JSON.stringify(ls.get('models', []), null, 2), 'application/json');
+$('mImport').onclick = () => $('mFile').click();
+$('mFile').onchange = async () => {
+  try {
+    const data = JSON.parse(await $('mFile').files[0].text());
+    const ok = Array.isArray(data) ? data.filter(m => m && typeof m.name === 'string' && Array.isArray(m.t) && m.t.length === 3 && m.t.every(x => typeof x === 'string')) : [];
+    const names = new Set(ok.map(m => m.name));
+    ls.set('models', [...ok, ...ls.get('models', []).filter(m => !names.has(m.name))]); renderModels(); toast(ok.length + ' modèle(s) importé(s)');
+  } catch (e) { toast('Fichier invalide'); }
+  $('mFile').value = '';
+};
+
+/* ---------- outils ---------- */
+$('tCopy').onclick = async () => {
+  try { await navigator.clipboard.writeText(F.map((f, i) => `Piste ${i + 1}: ${val(f)}`).join('\n')); toast('Copié'); } catch (e) { toast('Copie impossible'); }
+};
+$('tJson').onclick = () => download('carte.json', JSON.stringify({ piste1: val('t1'), piste2: val('t2'), piste3: val('t3') }, null, 2), 'application/json');
+$('tCsv').onclick = () => download('carte.csv', 'piste,donnees\n' + F.map((f, i) => `${i + 1},"${val(f).replaceAll('"', '""')}"`).join('\n') + '\n', 'text/csv');
+$('tInfo').onclick = async () => {
+  if (running) return; setBusy(true);
+  try {
+    const j = await api('info'); $('tInfoOut').textContent = j.error || `${j.msg} · coercivité actuelle : ${j.coercivity === 'loco' ? 'Lo-Co' : 'Hi-Co'}`;
+  } catch (e) { $('tInfoOut').textContent = 'Programme injoignable.'; } finally { setBusy(false); poll(); }
+};
+document.querySelectorAll('[data-led]').forEach(b => b.onclick = async () => {
+  if (running) return; setBusy(true); try { await api('leds', { color: b.dataset.led, seconds: 2 }); } finally { setBusy(false); poll(); }
+});
+
+/* ---------- état du lecteur ---------- */
+let fwShown = false;
+async function poll() {
+  if (mode === 'chip') return;
+  try {
+    const s = await (await fetch('/api/status')).json();
+    $('dot').className = 'dot ' + (s.busy ? 'busy' : s.connected ? 'on' : 'off');
+    $('statusText').textContent = s.busy ? 'En cours…' : s.connected ? 'Lecteur connecté' : 'Lecteur non détecté';
+    if (s.connected && !s.busy && !fwShown && !running) {
+      fwShown = true; const j = await api('info');
+      if (!j.error) $('fw').textContent = j.msg.replace('Lecteur connecté · ', '');
+    }
+    if (!s.connected) fwShown = false;
+  } catch (e) { $('dot').className = 'dot off'; $('statusText').textContent = 'Programme arrêté'; }
+}
+setInterval(poll, 3000);
+
+/* ---------- raccourcis ---------- */
+addEventListener('keydown', e => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key === 'Escape' && running) { $('bCancel').click(); return; }
+  if (mode !== 'mag' || /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) return;
+  const k = e.key.toLowerCase();
+  if (k === 'r') act('read'); else if (k === 'w') act('write'); else if (k === 'e') act('erase'); else if (k === 'm') $('bMask').click();
+});
+
+
+/* ---------- onglet Puce ---------- */
+let mode = (APP_MODE === 'mag' || APP_MODE === 'chip') ? APP_MODE : ls.get('mode', 'mag'), chipTimer = null, lastAtr = '';
+if (APP_MODE === 'mag' || APP_MODE === 'chip') $('modeSeg').style.display = 'none';
+function setMode(m) {
+  mode = m; ls.set('mode', m);
+  document.querySelectorAll('#modeSeg button').forEach(b => b.classList.toggle('on', b.dataset.mode === m));
+  $('app').classList.toggle('on', m === 'mag'); $('chipApp').classList.toggle('on', m === 'chip');
+  clearInterval(chipTimer);
+  if (m === 'chip') { chipPoll(); chipTimer = setInterval(chipPoll, 2000); }
+}
+document.querySelectorAll('#modeSeg button').forEach(b => b.onclick = () => setMode(b.dataset.mode));
+
+async function capi(name, body) {
+  const r = await fetch('/api/chip/' + name, { method: body === undefined ? 'GET' : 'POST', body: body === undefined ? undefined : JSON.stringify(body) });
+  return r.json();
+}
+/* Reconnaissance de carte par ATR : uniquement ce qu'on a confirmé nous-mêmes (pas de base inventée).
+   S'enrichit au fil des cartes testées — ajoute une entrée dès qu'un nouveau modèle est confirmé. */
+const KNOWN_CARDS = {
+  '3B0492231091': { name: 'SLE4428 (confirmée)', pscLen: 2, pscPlaceholder: 'FF FF' },
+};
+let detectedCard = null;
+
+function detectCard(atrHex) {
+  const clean = (atrHex || '').replace(/\s/g, '').toUpperCase();
+  return KNOWN_CARDS[clean] || null;
+}
+
+function renderChip(s) {
+  const dl = $('atrInfo'); dl.replaceChildren();
+  const add = (k, v) => { const a = document.createElement('dt'), b = document.createElement('dd'); a.textContent = k; b.textContent = v; dl.append(a, b); };
+  if (!s.available) { $('cLabel').textContent = 'Module puce absent'; $('atr').textContent = '—'; $('cMsg').textContent = 'La bibliothèque pyscard n\'est pas installée.'; return; }
+  $('dot').className = 'dot ' + (s.reader ? 'on' : 'off'); $('statusText').textContent = s.reader ? (s.present ? 'Carte à puce insérée' : 'Lecteur de puce connecté') : 'Lecteur de puce non détecté';
+  $('creader').classList.toggle('present', !!s.present); $('ccard').classList.toggle('in', !!s.present);
+  $('cLabel').textContent = s.reader || 'Aucun lecteur de puce détecté';
+  $('cMsg').textContent = !s.reader ? 'Branche le lecteur de puce en USB.' : !s.present ? 'Insère une carte, puce vers le haut, dans le lecteur.' : (s.error || '');
+  if (s.present && s.atr) {
+    lastAtr = s.atr.hex; $('atr').textContent = s.atr.hex;
+    add('Longueur', s.atr.length + ' octets'); add('Convention', s.atr.convention); add('Protocoles', s.atr.protocols);
+    add('Octets historiques', s.atr.historical || '—'); add('En ASCII', s.atr.historical_ascii || '—');
+    detectedCard = detectCard(s.atr.hex);
+    add('Type reconnu', detectedCard ? detectedCard.name : 'Non reconnu — ajuste le code manuellement');
+    if (detectedCard && !$('mWPsc').dataset.touched) {
+      $('mWPsc').value = detectedCard.pscPlaceholder;
+    }
+  } else { lastAtr = ''; detectedCard = null; $('atr').textContent = '—'; }
+}
+$('mWPsc').addEventListener('input', () => { $('mWPsc').dataset.touched = '1'; });
+let lastPresent = null;
+async function chipPoll() {
+  try {
+    const s = await capi('status'); renderChip(s);
+    if (lastPresent !== null && lastPresent !== !!s.present) {
+      log(s.present ? 'info' : 'info', s.present ? 'Puce : carte insérée' : 'Puce : carte retirée');
+      if (s.present) { beep(true); checkBlank(); } else { $('cBlankBadge').style.display = 'none'; }
+    }
+    lastPresent = !!s.present;
+  } catch (e) { $('cMsg').textContent = 'Programme injoignable.'; }
+}
+
+/* Dès qu'une carte est insérée : petit sondage de la zone utile (après l'en-tête protégé)
+   pour indiquer d'un coup d'œil si elle semble vierge ou déjà utilisée, sans avoir à cliquer sur Lire. */
+async function checkBlank() {
+  const badge = $('cBlankBadge');
+  badge.className = 'badge'; badge.style.display = ''; badge.textContent = 'Vérification…';
+  try {
+    const j = await capi('dump', { start: 0x20, length: 64 });
+    if (j.error && !j.hex) { badge.style.display = 'none'; return; }
+    const codes = (j.hex || '').split(' ').filter(Boolean).map(h => parseInt(h, 16));
+    const blank = codes.every(c => c === 0xFF || c === 0x00);
+    badge.className = 'badge ' + (blank ? 'blank' : 'used');
+    badge.textContent = blank ? 'Semble vierge' : 'Contient des données';
+  } catch (e) { badge.style.display = 'none'; }
+}
+$('cCopyAtr').onclick = async () => { if (!lastAtr) return toast('Aucune carte'); try { await navigator.clipboard.writeText(lastAtr); toast('ATR copié'); } catch (e) { toast('Copie impossible'); } };
+let lastContent = null;
+function printable(t) { return t.length > 0 && [...t].filter(c => c !== '.').length / t.length > 0.8 && /[A-Za-z0-9]/.test(t); }
+function tlvView(nodes, host, depth) {
+  for (const n of nodes) {
+    const d = el('div'); d.style.paddingLeft = (depth * 16) + 'px';
+    d.append(el('span', 'tg', n.tag));
+    if (n.children && n.children.length) { d.append(el('span', 'lbl', '(groupe)')); host.append(d); tlvView(n.children, host, depth + 1); continue; }
+    d.append(el('span', 'val', printable(n.ascii) ? n.ascii : n.hex)); host.append(d);
+  }
+}
+function renderContent(j) {
+  lastContent = j; const box = $('apps'); box.replaceChildren(); $('content').style.display = '';
+  let nf = 0;
+  for (const app of j.apps) {
+    const a = el('div', 'appb'); a.append(el('h3', '', app.label || 'Application'));
+    if (app.aid) a.append(el('div', 'aid', 'AID ' + app.aid));
+    if (app.sw !== '9000') a.append(el('div', 'hint bad', 'Sélection refusée : ' + app.sw + ' · ' + app.sw_text));
+    else if (!app.files.length) a.append(el('div', 'hint', 'Aucun fichier lisible en accès libre.'));
+    for (const f of app.files) {
+      nf++; const d = el('details', 'fileb'); const ok = f.sw === '9000' && !f.empty; d.open = ok;
+      const sm = el('summary'); sm.append(el('span', '', 'Fichier ' + String(f.sfi).padStart(2, '0')));
+      sm.append(el('small', '', f.size + ' octets'));
+      if (f.sw !== '9000') sm.append(el('span', 'badge lock', f.sw === '6982' ? 'protégé' : f.sw));
+      else if (f.empty) sm.append(el('span', 'badge', 'vide'));
+      d.append(sm);
+      if (ok) {
+        if (f.tlv && f.tlv.length) { const t = el('div', 'tl'); tlvView(f.tlv, t, 0); d.append(t); }
+        const r = el('details', 'raw'); r.append(el('summary', '', 'Octets bruts'));
+        const pre = el('pre', 'hex val', f.hex.replace(/(?:00 )+00$/, '00 …')); r.append(pre); d.append(r);
+      }
+      a.append(d);
+    }
+    box.append(a);
+  }
+  $('cSummary').textContent = j.apps.length + ' application(s), ' + nf + ' fichier(s) trouvé(s).';
+  $('content').classList.toggle('blur', masked);
+}
+$('cExplore').onclick = async () => {
+  $('cExplore').disabled = true; $('cMsg').textContent = 'Lecture en cours (une dizaine de secondes)…';
+  try {
+    const j = await capi('explore', {});
+    if (j.error) { showError(j.error); $('cMsg').textContent = j.error; beep(false); return; }
+    renderContent(j); $('cMsg').textContent = ''; log('ok', 'Puce : contenu lu'); beep(true);
+    $('content').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (e) { $('cMsg').textContent = 'Programme injoignable.'; } finally { $('cExplore').disabled = false; }
+};
+$('cExport').onclick = () => lastContent && download('carte-puce.json', JSON.stringify(lastContent, null, 2), 'application/json');
+$('cReset').onclick = async () => { renderChip(await capi('reset', {})); toast('Carte réinitialisée'); };
+
+function conAdd(node) {
+  const c = $('con'); if (c.querySelector('.empty')) c.replaceChildren();
+  c.prepend(node);
+}
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
+function showExchange(j) {
+  const d = el('div', 'ex');
+  for (const st of j.steps) {
+    d.append(el('div', 'tx', '→ ' + st.tx));
+    d.append(el('div', 'rx', '← ' + (st.rx ? st.rx + '  ' : '') + st.sw));
+  }
+  if (j.ascii && /[A-Za-z0-9]/.test(j.ascii)) d.append(el('div', 'tt', 'ASCII : ' + j.ascii));
+  d.append(el('div', 'sw ' + (j.ok ? 'ok' : 'err'), j.sw + ' · ' + j.sw_text));
+  conAdd(d);
+}
+function showError(msg) { const d = el('div', 'ex'); d.append(el('div', 'sw err', msg)); conAdd(d); }
+async function sendApdu() {
+  const v = $('apdu').value.trim(); if (!v) return;
+  const j = await capi('apdu', { apdu: v });
+  if (j.error) { showError(j.error); log('err', 'APDU : ' + j.error); beep(false); return; }
+  showExchange(j); log(j.ok ? 'ok' : 'info', 'APDU ' + j.sw + ' · ' + j.sw_text); beep(j.ok);
+}
+$('apduSend').onclick = sendApdu;
+$('apdu').addEventListener('keydown', e => { if (e.key === 'Enter') sendApdu(); });
+$('apduPre').onchange = () => { if ($('apduPre').value) { $('apdu').value = $('apduPre').value; $('apduPre').value = ''; $('apdu').focus(); } };
+$('apduClear').onclick = () => { $('con').innerHTML = '<div class="empty">Aucune commande envoyée.</div>'; };
+
+let lastDumpBytes = [], lastDumpStart = 0;
+
+$('mRead').onclick = async () => {
+  const start = parseInt($('mStart').value || '0', 16), length = +$('mLen').value;
+  if (isNaN(start)) return toast('Adresse invalide');
+  const j = await capi('dump', { start, length }), out = $('mOut'); out.style.display = 'block';
+  if (j.error && !j.hex) { out.textContent = j.error; $('mCopyText').style.display = 'none'; beep(false); return; }
+  const bytes = j.hex ? j.hex.split(' ') : [], lines = [];
+  lastDumpBytes = bytes; lastDumpStart = j.start;
+  $('mCopyText').style.display = bytes.length ? '' : 'none';
+  for (let i = 0; i < bytes.length; i += 16) {
+    const row = bytes.slice(i, i + 16), a = (j.start + i).toString(16).toUpperCase().padStart(4, '0');
+    const asc = row.map(h => { const c = parseInt(h, 16); return c >= 32 && c < 127 ? String.fromCharCode(c) : '.'; }).join('');
+    lines.push(a + '  ' + row.join(' ').padEnd(47) + '  ' + asc);
+  }
+  out.textContent = (lines.join('\n') || '(rien lu)') + (j.error ? '\n\n' + j.error : '');
+  log(j.error ? 'info' : 'ok', 'Lecture mémoire : ' + j.length + ' octets'); beep(!j.error);
+};
+
+/* Extrait le texte lisible de la dernière lecture : ignore toujours la zone protégée 0000-001F
+   (en-tête d'identification, jamais du vrai contenu) et le remplissage FF/00 en fin de zone,
+   puis copie le résultat dans le presse-papiers, prêt à coller ailleurs avec Cmd+V. */
+$('mCopyText').onclick = async () => {
+  let codes = lastDumpBytes
+    .map((h, i) => ({ addr: lastDumpStart + i, val: parseInt(h, 16) }))
+    .filter(b => b.addr >= 0x20)
+    .map(b => b.val);
+  while (codes.length && (codes[codes.length - 1] === 0xFF || codes[codes.length - 1] === 0x00)) codes.pop();
+  const text = codes.map(c => (c >= 32 && c < 127) ? String.fromCharCode(c) : '.').join('');
+  if (!text) return toast('Rien de lisible à copier.');
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('Texte copié — colle-le avec Cmd+V');
+    log('info', 'Mémoire copiée en texte clair (' + text.length + ' caractères)');
+  } catch (e) { toast('Copie impossible.'); }
+};
+
+/* ---------- dupliquer une carte vers une autre ---------- */
+let dupBuffer = null, dupStart = 0;
+
+$('mDupStart').onclick = async () => {
+  const start = parseInt($('mStart').value || '0', 16), length = +$('mLen').value;
+  if (isNaN(start)) return toast('Adresse invalide');
+  const j = await capi('dump', { start, length });
+  if (j.error && !j.hex) { toast('Lecture impossible : ' + j.error); log('err', 'Duplication : ' + j.error); beep(false); return; }
+  const bytes = (j.hex || '').split(' ').filter(Boolean)
+    .map((h, i) => ({ addr: j.start + i, hex: h }))
+    .filter(b => b.addr >= 0x20);
+  if (!bytes.length) return toast('Rien à dupliquer dans cette zone (uniquement de la zone protégée).');
+  dupStart = bytes[0].addr;
+  dupBuffer = bytes.map(b => b.hex).join(' ');
+  $('mDupFlow').style.display = '';
+  $('mDupMsg').textContent = bytes.length + ' octet(s) lu(s) à partir de ' + dupStart.toString(16).toUpperCase().padStart(4, '0') + '. Retire la carte source, insère la carte cible, puis clique sur « Écrire sur la carte cible ».';
+  log('info', 'Duplication : ' + bytes.length + ' octet(s) prêts à recopier');
+  beep(true);
+};
+
+$('mDupWrite').onclick = async () => {
+  if (!dupBuffer) return;
+  if (!confirm('Écrire ces ' + dupBuffer.split(' ').length + ' octets sur la carte actuellement dans le lecteur ? Assure-toi que c\'est bien la carte cible, pas la source.')) return;
+  const j = await capi('write_memory', { start: dupStart, data: dupBuffer, psc: $('mWPsc').value.trim() });
+  if (j.error) { toast(j.error); log('err', 'Duplication (écriture) : ' + j.error); beep(false); return; }
+  const r = await capi('dump', { start: dupStart, length: dupBuffer.split(' ').length });
+  const ok = normHex(r.hex) === normHex(dupBuffer);
+  toast(ok ? 'Carte dupliquée et vérifiée ✓' : 'Écrit, mais la vérification ne correspond pas.');
+  log(ok ? 'ok' : 'err', 'Duplication ' + (ok ? 'vérifiée' : 'à vérifier') + ' : ' + dupBuffer.split(' ').length + ' octet(s) à ' + dupStart.toString(16).toUpperCase().padStart(4, '0'));
+  beep(ok);
+  $('mDupFlow').style.display = 'none'; dupBuffer = null;
+};
+
+$('mDupCancel').onclick = () => { $('mDupFlow').style.display = 'none'; dupBuffer = null; };
+
+/* ---------- texte en clair -> hexadécimal, en direct (1 octet par caractère, Latin-1) ---------- */
+$('mWText').addEventListener('input', () => {
+  const text = $('mWText').value;
+  let hors = 0;
+  $('mWData').value = [...text].map(c => {
+    const code = c.charCodeAt(0);
+    if (code > 255) { hors++; return '3F'; }  // caractère non représentable sur 1 octet -> '?'
+    return code.toString(16).padStart(2, '0').toUpperCase();
+  }).join(' ');
+  $('mWTextLen').textContent = !text ? '' : (text.length + ' caractère(s)' + (hors ? ' — ' + hors + ' remplacé(s) par ? (hors Latin-1)' : ''));
+});
+
+function normHex(h) { return (h || '').replace(/\s+/g, ' ').trim().toUpperCase(); }
+
+/* ---------- modèles de puce (texte + adresse + code) ---------- */
+function renderChipModels() {
+  const list = ls.get('chipModels', []), box = $('mModelList'); box.replaceChildren();
+  if (!list.length) { box.innerHTML = '<div class="empty">Aucun modèle enregistré.</div>'; return; }
+  list.forEach((m, i) => {
+    const d = el('div', 'item');
+    const g = el('div', 'g'); g.append(el('b', '', m.name), el('small', '', m.start + ' · ' + (m.text || m.data).slice(0, 24)));
+    const load = el('button', 'btn small'); load.textContent = 'Charger';
+    load.onclick = () => {
+      $('mWStart').value = m.start; $('mWPsc').value = m.psc || ''; $('mWPsc').dataset.touched = '1';
+      $('mWText').value = m.text || ''; $('mWText').dispatchEvent(new Event('input'));
+      if (!m.text) $('mWData').value = m.data;
+      toast('Modèle chargé');
+    };
+    const del = el('button', 'btn small ghost'); del.textContent = '✕'; del.title = 'Supprimer';
+    del.onclick = () => { list.splice(i, 1); ls.set('chipModels', list); renderChipModels(); };
+    d.append(g, load, del); box.append(d);
+  });
+}
+$('mModelSave').onclick = () => {
+  const name = $('mModelName').value.trim(); if (!name) return toast('Donne un nom au modèle');
+  const list = ls.get('chipModels', []).filter(m => m.name !== name);
+  list.unshift({ name, text: $('mWText').value, data: $('mWData').value, start: $('mWStart').value, psc: $('mWPsc').value });
+  ls.set('chipModels', list); $('mModelName').value = ''; renderChipModels(); toast('Modèle enregistré');
+};
+renderChipModels();
+
+$('mWrite').onclick = async () => {
+  const start = parseInt($('mWStart').value || '0', 16);
+  const raw = $('mWData').value.trim();
+  if (isNaN(start)) return toast('Adresse invalide');
+  if (!raw) return toast('Indique les octets à écrire');
+  const rawLen = raw.split(/\s+/).filter(Boolean).length;
+  if (touchesHeader(start, rawLen) && !confirmHeaderRisk()) return toast('Écriture annulée.');
+  if (!confirm('Écrire ces octets sur la carte à partir de l\'adresse ' + $('mWStart').value.toUpperCase() + ' ? Ça remplace ce qui est déjà écrit à cet endroit.')) return;
+  const j = await capi('write_memory', { start, data: raw, psc: $('mWPsc').value.trim() });
+  if (j.error) { toast(j.error); log('err', 'Écriture mémoire : ' + j.error); beep(false); return; }
+  if (!$('mWVerify').checked) {
+    toast(j.written + ' octet(s) écrit(s)'); log('ok', 'Écriture mémoire : ' + j.written + ' octet(s) à ' + $('mWStart').value.toUpperCase());
+    beep(true); return;
+  }
+  const want = normHex(raw);
+  const length = want.split(' ').length;
+  const r = await capi('dump', { start, length });
+  if (r.error && !r.hex) { toast('Écrit, mais vérification impossible : ' + r.error); log('err', 'Vérification : ' + r.error); beep(false); return; }
+  const got = normHex(r.hex);
+  if (got === want) {
+    toast(j.written + ' octet(s) écrit(s) et vérifiés ✓'); log('ok', 'Écriture mémoire vérifiée : ' + j.written + ' octet(s) à ' + $('mWStart').value.toUpperCase());
+    beep(true);
+  } else {
+    toast('Écrit, mais la relecture ne correspond pas !'); log('err', 'Vérification échouée à ' + $('mWStart').value.toUpperCase() + ' — attendu « ' + want + ' », lu « ' + got + ' »');
+    beep(false);
+  }
+};
+
+/* Les tout premiers octets (adresse 0000...) servent d'en-tête d'identification pour le lecteur :
+   les effacer rend la carte invisible, y compris après redémarrage du Mac (confirmé ce soir).
+   On protège toute la zone 0000-001F (marge de sécurité) contre écriture/effacement, sauf confirmation forte. */
+function touchesHeader(start, len) { return start < 0x20; }
+function confirmHeaderRisk() {
+  return prompt('ATTENTION : cette opération touche la zone 0000-001F, protégée par sécurité — les tout premiers octets servent d\'identifiant à la carte pour le lecteur. Les effacer peut rendre la carte invisible, même après redémarrage — ça nous est arrivé ce soir. Tape EFFACER EN TOUTE CONNAISSANCE pour continuer quand même.') === 'EFFACER EN TOUTE CONNAISSANCE';
+}
+
+$('mErase').onclick = async () => {
+  const start = parseInt($('mWStart').value || '0', 16);
+  const len = +$('mEraseLen').value;
+  if (isNaN(start)) return toast('Adresse invalide');
+  if (!(len >= 1 && len <= 1024)) return toast('Nombre d\'octets invalide');
+  if (touchesHeader(start, len) && !confirmHeaderRisk()) return toast('Effacement annulé.');
+  if (!confirm('Effacer ' + len + ' octets à partir de l\'adresse ' + $('mWStart').value.toUpperCase() + ' ? La carte redeviendra vierge à cet endroit, irréversible.')) return;
+  const data = Array(len).fill('FF').join(' ');
+  const j = await capi('write_memory', { start, data, psc: $('mWPsc').value.trim() });
+  if (j.error) { toast(j.error); log('err', 'Effacement : ' + j.error); beep(false); return; }
+  toast(j.written + ' octet(s) effacé(s)'); log('ok', 'Carte effacée : ' + j.written + ' octet(s) à partir de ' + $('mWStart').value.toUpperCase());
+  beep(true);
+};
+
+/* ---------- copier une valeur (colle-la ensuite où tu veux avec Cmd+V) ---------- */
+async function copyValue(text, btn) {
+  if (!text) return toast('Rien à copier : ce champ est vide.');
+  try {
+    await navigator.clipboard.writeText(text);
+    const label = btn.textContent;
+    btn.textContent = 'Copié ✓';
+    setTimeout(() => { btn.textContent = label; }, 1200);
+    log('info', 'Copié (' + text.length + ' caractères) — colle avec Cmd+V');
+  } catch (e) {
+    toast('Copie impossible.');
+  }
+}
+document.querySelectorAll('[data-copy-src]').forEach(b => b.onclick = () => copyValue($(b.dataset.copySrc).value, b));
+
+syncPrefs(); renderModels(); poll(); setMode(mode);
+</script>
+</body>
+</html>
