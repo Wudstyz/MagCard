@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Wudstyz
 """Génère icon.icns (icône de l'application) avec Pillow + iconutil."""
 import os, subprocess, shutil
 from PIL import Image, ImageDraw, ImageFilter

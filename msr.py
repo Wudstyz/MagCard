@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Wudstyz
 """Lecture / écriture de cartes à piste magnétique avec un MSR605X (USB HID) sur macOS.
 
     msr.py gui                              interface web (http://127.0.0.1:8605)
