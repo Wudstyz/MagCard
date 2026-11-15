@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Wudstyz
+# Copyright (c) 2026 Damien POLLET (Wudstyz)
 """Logique commune aux deux applications macOS (MagCard, ChipCard) :
 fenêtre native pywebview autour du même serveur local, limitée à un seul mode."""
 import os
